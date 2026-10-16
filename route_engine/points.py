@@ -60,6 +60,18 @@ def serializar_ponto(ponto: dict, categoria: str) -> dict[str, object]:
         },
     }
 
+    if ponto.get("prioridade") is not None:
+        prioridade = int(ponto["prioridade"])
+        resultado["prioridade"] = prioridade
+        resultado["prioridade_rotulo"] = {
+            1: "alta",
+            2: "media",
+            3: "normal",
+        }.get(prioridade, f"nivel {prioridade}")
+
+    if ponto.get("demanda_kg") is not None:
+        resultado["demanda_kg"] = float(ponto["demanda_kg"])
+
     if ponto.get("plus_code"):
         resultado["plus_code"] = ponto["plus_code"]
         resultado["plus_code_completo"] = ponto["plus_code_completo"]

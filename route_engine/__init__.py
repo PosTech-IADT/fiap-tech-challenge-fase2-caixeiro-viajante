@@ -1,10 +1,15 @@
-from route_engine.data import SEDE, UNIDADES
+from route_engine.data import (
+    CONFIGURACAO_ALGORITMO_GENETICO,
+    SEDE,
+    UNIDADES,
+    VEICULO_PADRAO,
+)
 
 
-def calcular_melhor_rota_entrega(nomes_locais):
+def calcular_melhor_rota_entrega(nomes_locais, **restricoes):
     from route_engine.engine import calcular_melhor_rota_entrega as calcular
 
-    return calcular(nomes_locais)
+    return calcular(nomes_locais, **restricoes)
 
 
 def listar_unidades():
@@ -27,6 +32,8 @@ def exibir_mapa_unidades():
 __all__ = [
     "SEDE",
     "UNIDADES",
+    "VEICULO_PADRAO",
+    "CONFIGURACAO_ALGORITMO_GENETICO",
     "calcular_melhor_rota_entrega",
     "criar_mapa_rota",
     "exibir_mapa_unidades",
