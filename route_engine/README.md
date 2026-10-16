@@ -68,3 +68,16 @@ O resultado mantem os campos anteriores (`rota`, `distancia_total_km` e
 - `total_viagens`: quantidade de saidas necessarias;
 - `restricoes`: capacidade, autonomia e demanda total consideradas;
 - `algoritmo`: configuracao e metadados da execucao do algoritmo genetico.
+
+## Testes
+
+Os testes automatizados cobrem operadores geneticos, fitness, restricoes,
+cadastro de pontos, integracao interna do engine e mapas. A suite usa dados e
+grafos locais, sem acessar a rede ou o OpenStreetMap.
+
+Instale as dependencias de desenvolvimento e execute a partir da raiz:
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m pytest
+```
