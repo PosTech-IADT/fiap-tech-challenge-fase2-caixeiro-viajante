@@ -142,6 +142,9 @@ def obter_mensagem_carregamento(prompt: str) -> str:
     if any(termo in texto for termo in termos_rota):
         return "Calculando a melhor rota pelas ruas. Isso pode levar alguns instantes..."
 
+    if any(termo in texto for termo in ("relatorio", "relatório", "eficiencia", "eficiência", "melhoria")):
+        return "Analisando o historico de rotas para preparar o relatorio..."
+
     if "mapa" in texto:
         return "Gerando o mapa dos pontos..."
 
@@ -178,7 +181,9 @@ with st.sidebar:
         st.rerun()
 
 st.title("Route Assistant")
-st.caption("Consulte unidades de entrega e gere o mapa interativo dos pontos.")
+st.caption(
+    "Consulte unidades, calcule rotas e gere instrucoes ou relatorios operacionais."
+)
 
 if not os.getenv("OPENAI_API_KEY"):
     st.error("Configure a variavel OPENAI_API_KEY para utilizar o agente.")

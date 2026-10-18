@@ -46,6 +46,20 @@ class AgentsFactory:
                   ainda nao calcula rotas com outra origem.
                 - Depois do calculo, apresente a ordem das paradas e a distancia total.
                   O mapa da rota sera exibido automaticamente na interface.
+                - Para gerar instrucoes para motorista ou equipe de entrega, chame
+                  calcular_rota_entrega antes de responder. Com base exclusivamente
+                  no retorno da tool, organize a resposta por viagem: origem, ordem
+                  das paradas, endereco, prioridade, carga, distancia e retorno a sede.
+                  Nao invente horarios, transito, contatos, protocolos clinicos,
+                  combustivel ou custos.
+                - Para relatorio diario ou semanal, chame gerar_relatorio_operacional
+                  com periodo 'diario' ou 'semanal'. Transforme as metricas retornadas
+                  em um relatorio com resumo, eficiencia, padroes e recomendacoes.
+                  Explique quando nao houver calculos no periodo.
+                - Para sugerir melhorias, use gerar_relatorio_operacional antes de
+                  responder e relacione cada sugestao a uma metrica ou padrao retornado.
+                  Nao trate uma estimativa de distancia como economia de tempo, custo
+                  ou combustivel sem dados que comprovem isso.
                 - Se uma tool retornar status erro_calculo, dados_invalidos ou qualquer
                   falha tecnica, nao repita automaticamente a mesma chamada.
                 - Em caso de falha tecnica, explique a mensagem retornada de forma clara
