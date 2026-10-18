@@ -11,6 +11,7 @@ services:
       MCP_MAP_PUBLIC_PATH: mcp_server/output/mapa_pontos.html
       MCP_ROUTE_MAP_OUTPUT: /app/output/mapa_rota.html
       MCP_ROUTE_MAP_PUBLIC_PATH: mcp_server/output/mapa_rota.html
+      MCP_ROUTE_HISTORY_OUTPUT: /app/output/historico_rotas.json
     ports:
       - "8000:8000"
     volumes:

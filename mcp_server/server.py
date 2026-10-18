@@ -7,6 +7,8 @@ from route_engine.data import SEDE
 from route_engine.maps import criar_mapa_rota, exibir_mapa_unidades
 from route_engine.points import consultar_ponto, formatar_endereco, listar_pontos
 
+from mcp_server.history import obter_metricas_relatorio, registrar_calculo_rota
+
 
 logger = logging.getLogger(__name__)
 mcp = MCPServer("fiap-route-mcp")
@@ -152,6 +154,22 @@ def calcular_rota_entrega(
 
         rota.append(parada)
 
+    viagens = [
+        {
+            "numero": viagem["numero"],
+            "carga_kg": round(viagem["carga_kg"], 2),
+            "distancia_km": round(viagem["distancia_km"], 2),
+            "paradas": [parada["nome"] for parada in viagem["paradas"]],
+        }
+        for viagem in resultado["viagens"]
+    ]
+
+    try:
+        registro = registrar_calculo_rota(resultado, pontos)
+    except OSError as erro:
+        logger.warning("Nao foi possivel registrar o historico da rota: %s", erro)
+        registro = None
+
     resposta = {
         "status": "ok",
         "origem": {
@@ -170,8 +188,22 @@ def calcular_rota_entrega(
         "total_paradas": len(rota),
         "distancia_total_km": round(resultado["distancia_total_km"], 2),
         "rota": rota,
+        "viagens": viagens,
+        "restricoes": resultado["restricoes"],
+        "comparativo_referencia": {
+            chave: (
+                round(valor, 2) if isinstance(valor, float) else valor
+            )
+            for chave, valor in resultado["comparativo_referencia"].items()
+        },
         "mapa_gerado": mapa_gerado,
     }
+
+    if registro:
+        resposta["registro_historico"] = {
+            "gerado_em": registro["gerado_em"],
+            "status": "registrado",
+        }
 
     if mapa_gerado:
         resposta["mapa"] = os.getenv(
@@ -182,6 +214,26 @@ def calcular_rota_entrega(
         resposta["aviso_mapa"] = aviso_mapa
 
     return resposta
+
+
+@mcp.tool()
+def gerar_relatorio_operacional(periodo: str) -> dict[str, object]:
+    """Retorna metricas para um relatorio diario ou semanal de rotas.
+
+    Use ``periodo='diario'`` ou ``periodo='semanal'``. Os dados retornados
+    correspondem aos calculos de rota bem-sucedidos registrados pelo sistema.
+    A LLM deve transformar essas metricas em um relatorio claro, sem inventar
+    tempos, combustivel ou custos que nao estejam nos dados.
+    """
+    try:
+        metricas = obter_metricas_relatorio(periodo)
+    except ValueError as erro:
+        return {"status": "dados_invalidos", "mensagem": str(erro)}
+
+    return {
+        "status": "ok",
+        "metricas": metricas,
+    }
 
 
 if __name__ == "__main__":
