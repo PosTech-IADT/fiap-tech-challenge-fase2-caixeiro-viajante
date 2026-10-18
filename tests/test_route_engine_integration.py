@@ -135,6 +135,10 @@ def test_engine_entrega_resultado_completo_sem_rede(monkeypatch, unidades):
     assert resultado["restricoes"]["capacidade_veiculo_kg"] == 50.0
     assert resultado["algoritmo"]["inversoes_prioridade"] == 0
     assert len(resultado["coordenadas_por_viagem"]) == 2
+    comparativo = resultado["comparativo_referencia"]
+    assert comparativo["distancia_referencia_km"] == 5.0
+    assert comparativo["economia_distancia_km"] == 0.0
+    assert comparativo["economia_percentual"] == 0.0
 
 
 def test_engine_rejeita_locais_duplicados_antes_de_acessar_rede(
