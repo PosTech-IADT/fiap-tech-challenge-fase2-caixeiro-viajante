@@ -127,3 +127,19 @@ ficara disponivel em `http://localhost:8501`.
 
 Quando a tool `gerar_mapa_pontos` for chamada, o mapa salvo pelo MCP Server e
 renderizado diretamente na interface do agente.
+
+### Instrucoes e relatorios com LLM
+
+O agente usa a LLM para transformar dados retornados pelas tools em instrucoes
+de entrega e relatorios operacionais, sem criar metricas que nao existam no
+motor de rotas. Exemplos de pedidos no chat:
+
+- "Gere instrucoes para o motorista para a rota saindo da sede ate HCor e IGESP";
+- "Gere o relatorio diario de eficiencia das rotas";
+- "Quais melhorias voce sugere com base no relatorio semanal?".
+
+Cada calculo bem-sucedido e registrado em
+`mcp_server/output/historico_rotas.json` (arquivo local ignorado pelo Git). Os
+relatorios agregam quantidade de rotas, paradas, viagens, distancia e a economia
+de distancia frente a ordem originalmente informada. Tempo real, combustivel e
+custos nao sao estimados porque o projeto nao coleta esses dados.
