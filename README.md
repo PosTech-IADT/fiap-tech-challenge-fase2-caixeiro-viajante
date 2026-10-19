@@ -74,7 +74,8 @@ criar_mapa_rota(resultado)
 O servidor MCP fica em `mcp_server/` e usa o transporte SSE.
 Ele expoe as ferramentas `ping`, `listar_pontos_entrega`,
 `consultar_ponto_entrega`, `gerar_mapa_pontos` e
-`calcular_rota_entrega` no endpoint
+`calcular_rota_entrega` (descontinuada), `otimizar_rota_genetica` e
+`gerar_relatorio_operacional` no endpoint
 `http://localhost:8000/sse`.
 
 A ferramenta `gerar_mapa_pontos` cria o mapa interativo em
@@ -82,7 +83,16 @@ A ferramenta `gerar_mapa_pontos` cria o mapa interativo em
 
 A ferramenta `calcular_rota_entrega` recebe os nomes dos pontos e a confirmacao
 de saida da sede. Ela retorna a melhor ordem das paradas, a distancia total e
-cria o mapa em `mcp_server/output/mapa_rota.html`.
+cria o mapa em `mcp_server/output/mapa_rota.html`. Essa ferramenta esta
+descontinuada, permanece disponivel apenas para clientes antigos e nao e
+exposta ao Route Assistant. Novas integracoes devem usar
+`otimizar_rota_genetica`.
+
+A ferramenta `otimizar_rota_genetica` tambem recebe capacidade e autonomia do
+veiculo, alem de demandas e prioridades por unidade. Prioridade 1 representa
+criticidade alta, 2 media e 3 normal. Parametros tecnicos do algoritmo podem
+ser enviados em `configuracao_ga`, mas devem permanecer nos valores padrao
+quando o usuario nao solicitar sua alteracao.
 
 No MCP Inspector, selecione o transporte `SSE` e use a URL acima.
 
@@ -101,7 +111,7 @@ docker compose ps
 Execute o cliente de teste dentro do container:
 
 ```bash
-docker compose exec mcp-server python test_client.py
+docker compose exec mcp-server python mcp_server/test_client.py
 ```
 
 Para acompanhar os logs ou encerrar o servidor:
@@ -114,7 +124,15 @@ docker compose down
 ## Frontend do agente
 
 O frontend Streamlit fica em `route_agent/` e roda em um container separado.
-Ele utiliza o OpenAI Agents SDK e se conecta ao MCP Server por SSE.
+Ele utiliza o OpenAI Agents SDK com o modelo `gpt-5.4-mini`, raciocinio
+configurado como `low` e respostas de baixa verbosidade. O agente se conecta
+ao MCP Server por SSE.
+
+Chamadas demoradas ao MCP usam um timeout configuravel pela variavel
+`MCP_CLIENT_TIMEOUT_SECONDS`. O valor padrao no Docker Compose e de 300
+segundos. Esse limite pertence ao Route Assistant; clientes externos, como o
+MCP Inspector, possuem seu proprio timeout e devem ser configurados
+separadamente.
 
 Crie o arquivo `.env` na raiz do projeto:
 
@@ -135,6 +153,8 @@ de entrega e relatorios operacionais, sem criar metricas que nao existam no
 motor de rotas. Exemplos de pedidos no chat:
 
 - "Gere instrucoes para o motorista para a rota saindo da sede ate HCor e IGESP";
+- "Otimize a rota saindo da sede para HCor e IGESP com capacidade de 50 kg,
+  autonomia de 30 km e informe peso e criticidade de cada parada";
 - "Gere o relatorio diario de eficiencia das rotas";
 - "Quais melhorias voce sugere com base no relatorio semanal?".
 

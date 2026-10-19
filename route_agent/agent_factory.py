@@ -1,4 +1,5 @@
 from agents import Agent, ModelSettings
+from openai.types.shared import Reasoning
 
 
 class AgentsFactory:
@@ -6,7 +7,7 @@ class AgentsFactory:
     def create_agent():
         return Agent(
             name="RouteAssistant",
-            model="gpt-4.1-mini",
+            model="gpt-5.4-mini",
             instructions="""
                 Voce e um assistente especializado nos pontos de entrega da operacao
                 logistica hospitalar.
@@ -36,20 +37,33 @@ class AgentsFactory:
                 - Quando o usuario pedir um mapa, use gerar_mapa_pontos e informe que
                   o mapa interativo sera exibido na interface.
                 - Para calcular uma rota, identifique todos os pontos desejados antes
-                  de chamar calcular_rota_entrega.
+                  de chamar uma tool de rota.
                 - O engine sempre inicia a rota no Hub Logistico Saude Centro. Quando
                   o usuario nao informar a origem ou nao deixar claro que aceita sair
                   da sede, confirme isso antes de calcular.
                 - Se o usuario ja disser que a rota parte da sede, nao repita a
-                  confirmacao. Chame calcular_rota_entrega com partir_da_sede=true.
+                  confirmacao. Chame a tool escolhida com partir_da_sede=true.
                 - Se o usuario nao aceitar partir da sede, explique que o engine atual
                   ainda nao calcula rotas com outra origem.
+                - Use otimizar_rota_genetica para todos os novos calculos de rota.
+                  Quando o usuario nao informar restricoes personalizadas, omita esses
+                  argumentos para que o engine use os valores cadastrados.
+                - Nunca use calcular_rota_entrega. Essa tool esta descontinuada e
+                  existe apenas para compatibilidade com clientes antigos do MCP.
+                - Em otimizar_rota_genetica, converta criticidade alta para prioridade
+                  1, media para 2 e normal para 3. Envie pesos como demandas_kg,
+                  mantendo os nomes das unidades exatamente como foram cadastrados.
+                - Nao altere configuracao_ga, como populacao, geracoes ou mutacao,
+                  a menos que o usuario solicite explicitamente esses parametros.
                 - Depois do calculo, apresente a ordem das paradas e a distancia total.
-                  O mapa da rota sera exibido automaticamente na interface.
+                  Inclua a demanda e a criticidade retornadas para cada parada, alem
+                  da carga, distancia e paradas de cada viagem. O mapa da rota sera
+                  exibido automaticamente na interface.
                 - Para gerar instrucoes para motorista ou equipe de entrega, chame
-                  calcular_rota_entrega antes de responder. Com base exclusivamente
-                  no retorno da tool, organize a resposta por viagem: origem, ordem
-                  das paradas, endereco, prioridade, carga, distancia e retorno a sede.
+                  otimizar_rota_genetica antes de responder.
+                  Com base exclusivamente no retorno da tool, organize a resposta por
+                  viagem: origem, ordem das paradas, endereco, prioridade, demanda,
+                  carga, distancia e retorno a sede.
                   Nao invente horarios, transito, contatos, protocolos clinicos,
                   combustivel ou custos.
                 - Para relatorio diario ou semanal, chame gerar_relatorio_operacional
@@ -72,7 +86,8 @@ class AgentsFactory:
             """,
             model_settings=ModelSettings(
                 tool_choice="auto",
-                temperature=0,
+                reasoning=Reasoning(effort="low"),
+                verbosity="low",
                 parallel_tool_calls=False,
             ),
         )

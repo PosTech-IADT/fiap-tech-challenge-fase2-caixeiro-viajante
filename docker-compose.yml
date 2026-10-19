@@ -36,6 +36,7 @@ services:
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       MCP_SERVER_URL: http://mcp-server:8000/sse
+      MCP_CLIENT_TIMEOUT_SECONDS: ${MCP_CLIENT_TIMEOUT_SECONDS:-300}
       POINTS_MAP_HTML_PATH: /maps/mapa_pontos.html
       ROUTE_MAP_HTML_PATH: /maps/mapa_rota.html
     ports:

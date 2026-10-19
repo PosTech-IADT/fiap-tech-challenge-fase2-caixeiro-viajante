@@ -65,7 +65,18 @@ def gerar_mapa_pontos() -> dict[str, object]:
     }
 
 
-@mcp.tool()
+@mcp.tool(
+    title="[DESCONTINUADA] Calcular rota de entrega",
+    description=(
+        "TOOL DESCONTINUADA. Mantida temporariamente para compatibilidade "
+        "com clientes antigos. Use otimizar_rota_genetica para qualquer novo "
+        "calculo de rota."
+    ),
+    meta={
+        "fiap/deprecated": True,
+        "fiap/replacementTool": "otimizar_rota_genetica",
+    },
+)
 def calcular_rota_entrega(
     pontos: list[str],
     partir_da_sede: bool,
@@ -76,6 +87,64 @@ def calcular_rota_entrega(
     confirme com o usuario que a entrega deve partir da sede quando essa origem
     ainda nao estiver clara. Envie `partir_da_sede=true` apos a confirmacao.
     """
+    resposta = _executar_calculo_rota(pontos, partir_da_sede)
+    resposta["aviso_descontinuacao"] = {
+        "mensagem": (
+            "A tool calcular_rota_entrega esta descontinuada e sera removida "
+            "em uma versao futura."
+        ),
+        "substituta": "otimizar_rota_genetica",
+    }
+    return resposta
+
+
+@mcp.tool()
+def otimizar_rota_genetica(
+    pontos: list[str],
+    partir_da_sede: bool,
+    capacidade_kg: float | None = None,
+    autonomia_km: float | None = None,
+    prioridades: dict[str, int] | None = None,
+    demandas_kg: dict[str, float] | None = None,
+    configuracao_ga: dict | None = None,
+) -> dict[str, object]:
+    """Otimiza uma rota de entrega usando algoritmo genetico.
+
+    Use esta tool quando o usuario informar capacidade do veiculo, autonomia,
+    pesos/demandas ou criticidades/prioridades diferentes do cadastro. A
+    prioridade 1 e alta, 2 e media e 3 e normal. As chaves de ``prioridades``
+    e ``demandas_kg`` devem ser nomes de pontos presentes em ``pontos``.
+
+    ``configuracao_ga`` e opcional e permite sobrescrever parametros tecnicos
+    do algoritmo, como ``tamanho_populacao``, ``geracoes``, ``taxa_mutacao``,
+    ``tamanho_torneio``, ``elitismo`` e ``semente``. Nao altere esses valores
+    quando o usuario nao pedir explicitamente.
+    """
+    restricoes = {
+        "capacidade_kg": capacidade_kg,
+        "autonomia_km": autonomia_km,
+        "prioridades": prioridades,
+        "demandas_kg": demandas_kg,
+        "configuracao_ga": configuracao_ga,
+    }
+    restricoes = {
+        nome: valor
+        for nome, valor in restricoes.items()
+        if valor is not None
+    }
+    return _executar_calculo_rota(
+        pontos,
+        partir_da_sede,
+        restricoes_engine=restricoes,
+    )
+
+
+def _executar_calculo_rota(
+    pontos: list[str],
+    partir_da_sede: bool,
+    *,
+    restricoes_engine: dict | None = None,
+) -> dict[str, object]:
     caminho_mapa = Path(
         os.getenv("MCP_ROUTE_MAP_OUTPUT", "/app/output/mapa_rota.html")
     )
@@ -100,7 +169,10 @@ def calcular_rota_entrega(
     try:
         from route_engine.engine import calcular_melhor_rota_entrega
 
-        resultado = calcular_melhor_rota_entrega(pontos)
+        resultado = calcular_melhor_rota_entrega(
+            pontos,
+            **(restricoes_engine or {}),
+        )
     except ValueError as erro:
         logger.warning("Dados invalidos para calcular a rota: %s", erro)
         return {
@@ -138,6 +210,11 @@ def calcular_rota_entrega(
             "ordem": ordem,
             "nome": ponto["nome"],
             "tipo": ponto["tipo"],
+            "prioridade": ponto["prioridade"],
+            "prioridade_rotulo": ponto["prioridade_rotulo"],
+            "demanda_kg": round(float(ponto["demanda_kg"]), 2),
+            "viagem": ponto["viagem"],
+            "ordem_na_viagem": ponto["ordem_na_viagem"],
             "endereco": ponto["endereco"].copy(),
             "endereco_formatado": formatar_endereco(ponto["endereco"]),
             "coordenadas": {
@@ -186,6 +263,8 @@ def calcular_rota_entrega(
             },
         },
         "total_paradas": len(rota),
+        "total_viagens": resultado["total_viagens"],
+        "retorna_para_sede": resultado["retorna_para_sede"],
         "distancia_total_km": round(resultado["distancia_total_km"], 2),
         "rota": rota,
         "viagens": viagens,
@@ -196,6 +275,7 @@ def calcular_rota_entrega(
             )
             for chave, valor in resultado["comparativo_referencia"].items()
         },
+        "algoritmo": resultado["algoritmo"],
         "mapa_gerado": mapa_gerado,
     }
 

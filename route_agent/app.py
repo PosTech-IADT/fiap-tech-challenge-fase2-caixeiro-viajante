@@ -93,6 +93,7 @@ def obter_mapa_solicitado() -> tuple[str, Path] | None:
     mapas_por_tool = {
         "gerar_mapa_pontos": ("Mapa dos pontos", POINTS_MAP_HTML_PATH),
         "calcular_rota_entrega": ("Mapa da rota", ROUTE_MAP_HTML_PATH),
+        "otimizar_rota_genetica": ("Mapa da rota otimizada", ROUTE_MAP_HTML_PATH),
     }
 
     for mensagem in reversed(st.session_state.history):
