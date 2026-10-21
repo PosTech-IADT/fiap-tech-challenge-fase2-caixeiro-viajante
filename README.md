@@ -2,6 +2,31 @@
 
 Projeto para calcular a melhor rota de entrega saindo sempre da sede e visitando as unidades selecionadas.
 
+## Evolucao do codigo-base da FIAP
+
+Este projeto foi desenvolvido a partir dos conceitos e operadores apresentados
+no codigo-base
+[`FIAP/genetic_algorithm_tsp`](https://github.com/FIAP/genetic_algorithm_tsp).
+O exemplo original resolve o TSP sobre pontos cartesianos e usa distancia em
+linha reta. Nesta evolucao, a mesma estrutura genetica foi adaptada para o
+contexto hospitalar e para trajetos sobre ruas reais do OpenStreetMap.
+
+Os nomes centrais foram mantidos para tornar essa evolucao rastreavel:
+
+| Codigo-base | Implementacao deste projeto | Evolucao realizada |
+| --- | --- | --- |
+| `genetic_algorithm.py` | `route_engine/genetic_algorithm.py` | Nucleo genetico modular e testavel |
+| `generate_random_population` | `generate_random_population` | Inclui um individuo inicial heuristico |
+| `calculate_fitness` | `calculate_fitness` | Considera ruas, prioridade, carga e autonomia |
+| `order_crossover` | `order_crossover` | Combina dois pais e preserva rotas validas |
+| `mutate` | `mutate` | Aplica mutacao por troca ou inversao |
+| `sort_population` | `sort_population` | Ordena individuos pelo fitness ampliado |
+
+O Pygame do exemplo foi substituido por mapas Folium. O calculo euclidiano em
+pixels foi substituido por uma matriz de menores caminhos calculada com OSMnx e
+NetworkX. A API de negocio continua em portugues para representar o dominio de
+entregas hospitalares.
+
 ## Como usar
 
 1. Ative o ambiente virtual:
@@ -64,6 +89,8 @@ criar_mapa_rota(resultado)
 - `route_engine/`: motor de rotas usado pelo `main.py` e pelos futuros serviços.
 - `route_engine/data.py`: cadastro da sede e das unidades.
 - `route_engine/engine.py`: cálculo da melhor rota pelas ruas.
+- `route_engine/genetic_algorithm.py`: evolucao do algoritmo genetico fornecido
+  pela FIAP, com operadores especializados e restricoes hospitalares.
 - `route_engine/maps.py`: geração do mapa de unidades e do mapa animado em HTML.
 - `main.ipynb`: notebook usado para exploracao, testes e visualizacao.
 - `requirements.txt`: dependencias Python do projeto.

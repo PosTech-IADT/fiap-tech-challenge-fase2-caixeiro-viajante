@@ -10,17 +10,26 @@ import streamlit.components.v1 as components
 
 from agent_factory import AgentsFactory
 from mcp_manager import MCPManager
+from ui_state import obter_tool_mapa_da_ultima_interacao
 
 
 load_dotenv()
 
-APP_TITLE = "Route Assistant"
+APP_TITLE = "Assistente de Rota"
 POINTS_MAP_HTML_PATH = Path(
     os.getenv("POINTS_MAP_HTML_PATH", "/maps/mapa_pontos.html")
 )
 ROUTE_MAP_HTML_PATH = Path(
     os.getenv("ROUTE_MAP_HTML_PATH", "/maps/mapa_rota.html")
 )
+MENSAGENS_TOOL = {
+    "listar_pontos_entrega": "Listando os pontos de entrega cadastrados...",
+    "consultar_ponto_entrega": "Consultando os dados do ponto de entrega...",
+    "gerar_mapa_pontos": "Gerando o mapa dos pontos...",
+    "otimizar_rota_genetica": "Calculando e otimizando a rota...",
+    "gerar_relatorio_operacional": "Gerando o relatório operacional...",
+    "ping": "Verificando a conexão com o servidor MCP...",
+}
 
 st.set_page_config(
     page_title=APP_TITLE,
@@ -96,12 +105,12 @@ def obter_mapa_solicitado() -> tuple[str, Path] | None:
         "otimizar_rota_genetica": ("Mapa da rota otimizada", ROUTE_MAP_HTML_PATH),
     }
 
-    for mensagem in reversed(st.session_state.history):
-        tipo = mensagem.get("role") or mensagem.get("type")
-        nome_tool = mensagem.get("name")
-
-        if tipo == "function_call" and nome_tool in mapas_por_tool:
-            return mapas_por_tool[nome_tool]
+    nome_tool = obter_tool_mapa_da_ultima_interacao(
+        st.session_state.history,
+        mapas_por_tool,
+    )
+    if nome_tool:
+        return mapas_por_tool[nome_tool]
 
     return None
 
@@ -123,44 +132,43 @@ def renderizar_mapa() -> None:
     )
 
 
-def obter_mensagem_carregamento(prompt: str) -> str:
-    mensagens_recentes = st.session_state.history[-6:]
-    contexto = " ".join(
-        str(mensagem.get("content", ""))
-        for mensagem in mensagens_recentes
-    )
-    texto = f"{contexto} {prompt}".casefold()
+def obter_nome_tool_evento(evento) -> str | None:
+    item = getattr(evento, "item", None)
+    raw_item = getattr(item, "raw_item", None)
 
-    termos_rota = (
-        "rota",
-        "trajeto",
-        "caminho",
-        "paradas",
-        "partir da sede",
-        "saindo da sede",
-    )
-
-    if any(termo in texto for termo in termos_rota):
-        return "Calculando a melhor rota pelas ruas. Isso pode levar alguns instantes..."
-
-    if any(termo in texto for termo in ("relatorio", "relatório", "eficiencia", "eficiência", "melhoria")):
-        return "Analisando o historico de rotas para preparar o relatorio..."
-
-    if "mapa" in texto:
-        return "Gerando o mapa dos pontos..."
-
-    return "Consultando o servidor MCP..."
+    return getattr(raw_item, "name", None) or getattr(item, "name", None)
 
 
-async def resolver_chat() -> None:
+def obter_mensagem_tool(nome_tool: str) -> str:
+    return MENSAGENS_TOOL.get(nome_tool, f"Executando {nome_tool}...")
+
+
+async def resolver_chat(status) -> None:
     async with MCPManager.get_server() as server:
         st.session_state.agent.mcp_servers = [server]
 
-        resultado = await Runner.run(
+        resultado = Runner.run_streamed(
             starting_agent=st.session_state.agent,
             input=st.session_state.history,
             context=st.session_state.history,
         )
+
+        async for evento in resultado.stream_events():
+            if evento.type != "run_item_stream_event":
+                continue
+
+            if evento.name == "tool_called":
+                nome_tool = obter_nome_tool_evento(evento)
+                if nome_tool:
+                    status.update(label=obter_mensagem_tool(nome_tool))
+                else:
+                    status.update(label="Executando uma ferramenta...")
+
+            elif evento.name == "tool_output":
+                status.update(label="Analisando o resultado da ferramenta...")
+
+            elif evento.name == "message_output_created":
+                status.update(label="Finalizando a resposta...")
 
         st.session_state.agent = resultado.last_agent
         st.session_state.history = resultado.to_input_list()
@@ -173,7 +181,7 @@ if "history" not in st.session_state:
     st.session_state.history = []
 
 with st.sidebar:
-    st.header("Route Assistant")
+    st.header(APP_TITLE)
     st.caption("Conectado ao servidor MCP de pontos hospitalares.")
 
     if st.button("Limpar conversa", use_container_width=True):
@@ -181,7 +189,7 @@ with st.sidebar:
         st.session_state.history = []
         st.rerun()
 
-st.title("Route Assistant")
+st.title(APP_TITLE)
 st.caption(
     "Consulte unidades, calcule rotas e gere instrucoes ou relatorios operacionais."
 )
@@ -198,8 +206,6 @@ prompt = st.chat_input(
 )
 
 if prompt:
-    mensagem_carregamento = obter_mensagem_carregamento(prompt)
-
     st.session_state.history.append(
         {
             "role": "user",
@@ -210,10 +216,15 @@ if prompt:
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    with st.spinner(mensagem_carregamento):
+    with st.status("Analisando sua solicitação...", expanded=False) as status:
         try:
-            asyncio.run(resolver_chat())
+            asyncio.run(resolver_chat(status))
         except Exception as erro:
+            status.update(
+                label="Não foi possível concluir a solicitação.",
+                state="error",
+            )
             st.error(f"Nao foi possivel concluir a solicitacao: {erro}")
         else:
+            status.update(label="Solicitação concluída.", state="complete")
             st.rerun()

@@ -6,6 +6,11 @@ algoritmo genetico para definir a ordem das entregas.
 ## Algoritmo genetico
 
 Cada individuo da populacao representa uma permutacao dos pontos de entrega.
+A implementacao fica em `genetic_algorithm.py`, seguindo os nomes do codigo-base
+da FIAP: `generate_random_population`, `calculate_fitness`, `order_crossover`,
+`mutate` e `sort_population`. As funcoes foram ampliadas para o problema
+hospitalar sem perder a correspondencia com o ponto de partida fornecido.
+
 A evolucao utiliza:
 
 - selecao por torneio;
