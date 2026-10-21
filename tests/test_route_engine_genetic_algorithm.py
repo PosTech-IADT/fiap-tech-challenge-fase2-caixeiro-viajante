@@ -6,12 +6,13 @@ import random
 
 import pytest
 
-from route_engine.genetic import (
-    _contar_inversoes_prioridade,
-    _cruzamento_ordenado,
-    _mutar,
-    avaliar_rota,
-    otimizar_rota_genetica,
+from route_engine.genetic_algorithm import (
+    _count_priority_inversions,
+    calculate_fitness,
+    generate_random_population,
+    mutate,
+    order_crossover,
+    run_genetic_algorithm,
 )
 
 
@@ -77,33 +78,49 @@ def test_cruzamento_ordenado_preserva_genes_sem_repeticao():
     pai_a = ("A", "B", "C", "D", "E")
     pai_b = ("E", "D", "C", "B", "A")
 
-    filho = _cruzamento_ordenado(pai_a, pai_b, random.Random(7))
+    filho = order_crossover(pai_a, pai_b, random.Random(7))
 
     assert sorted(filho) == sorted(pai_a)
     assert len(filho) == len(set(filho))
 
 
+def test_populacao_inicial_preserva_individuo_heuristico_e_permutacoes():
+    genes = ("A", "B", "C")
+    inicial = ("A", "B", "C")
+
+    populacao = generate_random_population(
+        genes,
+        10,
+        random.Random(7),
+        initial_individual=inicial,
+    )
+
+    assert populacao[0] == inicial
+    assert len(populacao) == 10
+    assert all(sorted(individuo) == sorted(genes) for individuo in populacao)
+
+
 def test_cruzamento_com_individuo_unitario_mantem_individuo():
-    assert _cruzamento_ordenado(("A",), ("A",), random.Random(7)) == ("A",)
+    assert order_crossover(("A",), ("A",), random.Random(7)) == ("A",)
 
 
 def test_mutacao_zero_mantem_individuo():
     individuo = ("A", "B", "C", "D")
-    assert _mutar(individuo, 0.0, random.Random(7)) == individuo
+    assert mutate(individuo, 0.0, random.Random(7)) == individuo
 
 
 def test_mutacao_swap_troca_duas_posicoes():
     individuo = ("A", "B", "C", "D")
     gerador = GeradorControlado((0, 2), [0.0, 0.25])
 
-    assert _mutar(individuo, 1.0, gerador) == ("C", "B", "A", "D")
+    assert mutate(individuo, 1.0, gerador) == ("C", "B", "A", "D")
 
 
 def test_mutacao_por_inversao_inverte_trecho():
     individuo = ("A", "B", "C", "D")
     gerador = GeradorControlado((1, 3), [0.0, 0.75])
 
-    assert _mutar(individuo, 1.0, gerador) == ("A", "D", "C", "B")
+    assert mutate(individuo, 1.0, gerador) == ("A", "D", "C", "B")
 
 
 def test_conta_inversoes_quando_prioridade_alta_fica_depois():
@@ -112,7 +129,7 @@ def test_conta_inversoes_quando_prioridade_alta_fica_depois():
         for unidade in criar_unidades(prioridades=(1, 2, 3))
     }
 
-    assert _contar_inversoes_prioridade(("C", "B", "A"), unidades) == 3
+    assert _count_priority_inversions(("C", "B", "A"), unidades) == 3
 
 
 def test_rota_prioritaria_possui_fitness_menor():
@@ -129,8 +146,8 @@ def test_rota_prioritaria_possui_fitness_menor():
         "configuracao": criar_configuracao(),
     }
 
-    rota_prioritaria = avaliar_rota(("A", "B", "C"), **argumentos)
-    rota_invertida = avaliar_rota(("C", "B", "A"), **argumentos)
+    rota_prioritaria = calculate_fitness(("A", "B", "C"), **argumentos)
+    rota_invertida = calculate_fitness(("C", "B", "A"), **argumentos)
 
     assert rota_prioritaria.fitness < rota_invertida.fitness
     assert rota_prioritaria.inversoes_prioridade == 0
@@ -143,7 +160,7 @@ def test_capacidade_divide_rota_em_multiplas_viagens():
         for unidade in criar_unidades(demandas=(40.0, 40.0, 40.0))
     }
 
-    avaliacao = avaliar_rota(
+    avaliacao = calculate_fitness(
         ("A", "B", "C"),
         SEDE,
         unidades,
@@ -177,7 +194,7 @@ def test_autonomia_divide_rota_antes_de_exceder_limite():
         }
     )
 
-    avaliacao = avaliar_rota(
+    avaliacao = calculate_fitness(
         ("A", "B", "C"),
         SEDE,
         unidades,
@@ -205,7 +222,7 @@ def test_otimizador_rejeita_rota_operacionalmente_inviavel(
     mensagem,
 ):
     with pytest.raises(ValueError, match=mensagem):
-        otimizar_rota_genetica(
+        run_genetic_algorithm(
             nome_sede=SEDE,
             unidades=criar_unidades(demandas=demandas),
             distancias=criar_distancias(),
@@ -225,13 +242,13 @@ def test_resultado_e_reproduzivel_com_a_mesma_semente():
         "configuracao": criar_configuracao(semente=123),
     }
 
-    assert otimizar_rota_genetica(**argumentos) == otimizar_rota_genetica(
+    assert run_genetic_algorithm(**argumentos) == run_genetic_algorithm(
         **argumentos
     )
 
 
 def test_otimizador_retorna_permutacao_valida_e_sem_inversoes():
-    resultado = otimizar_rota_genetica(
+    resultado = run_genetic_algorithm(
         nome_sede=SEDE,
         unidades=criar_unidades(),
         distancias=criar_distancias(),
@@ -258,7 +275,7 @@ def test_otimizador_retorna_permutacao_valida_e_sem_inversoes():
 )
 def test_rejeita_configuracao_genetica_invalida(campo, valor, mensagem):
     with pytest.raises(ValueError, match=mensagem):
-        otimizar_rota_genetica(
+        run_genetic_algorithm(
             nome_sede=SEDE,
             unidades=criar_unidades(),
             distancias=criar_distancias(),
@@ -278,7 +295,7 @@ def test_rejeita_parametros_operacionais_invalidos(
     mensagem,
 ):
     with pytest.raises(ValueError, match=mensagem):
-        otimizar_rota_genetica(
+        run_genetic_algorithm(
             nome_sede=SEDE,
             unidades=criar_unidades(),
             distancias=criar_distancias(),

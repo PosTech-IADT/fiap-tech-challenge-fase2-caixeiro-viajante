@@ -8,7 +8,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py agent_factory.py mcp_manager.py ./
+COPY app.py agent_factory.py mcp_manager.py ui_state.py ./
 
 EXPOSE 8501
 

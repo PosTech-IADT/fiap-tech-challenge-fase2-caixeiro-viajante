@@ -8,7 +8,10 @@ from route_engine.data import (
     SEDE,
     VEICULO_PADRAO,
 )
-from route_engine.genetic import otimizar_rota_genetica
+from route_engine.genetic_algorithm import (
+    calculate_fitness,
+    run_genetic_algorithm,
+)
 from route_engine.points import buscar_unidade, preparar_unidades
 
 
@@ -221,7 +224,7 @@ def calcular_melhor_rota_entrega(
     grafo_ruas = montar_grafo_por_ruas(pontos)
     distancias, caminhos = _calcular_matriz_rotas(grafo_ruas, pontos)
 
-    resultado_ga = otimizar_rota_genetica(
+    resultado_ga = run_genetic_algorithm(
         nome_sede=SEDE["nome"],
         unidades=unidades_entrega,
         distancias=distancias,
@@ -234,6 +237,17 @@ def calcular_melhor_rota_entrega(
         unidade["nome"]: unidade
         for unidade in unidades_entrega
     }
+    # Usa a ordem informada pelo operador como referencia para tornar o ganho
+    # da otimizacao auditavel nos relatorios operacionais.
+    avaliacao_referencia = calculate_fitness(
+        tuple(nomes_encontrados),
+        SEDE["nome"],
+        unidades_por_nome,
+        distancias,
+        capacidade_kg,
+        autonomia_km * 1000,
+        configuracao,
+    )
     melhor_rota = []
     viagens = []
 
@@ -284,6 +298,10 @@ def calcular_melhor_rota_entrega(
         float(unidade["demanda_kg"])
         for unidade in unidades_entrega
     )
+    economia_referencia_m = max(
+        0.0,
+        avaliacao_referencia.distancia_total_m - resultado_ga["distancia_total_m"],
+    )
 
     return {
         "sede": SEDE,
@@ -304,6 +322,23 @@ def calcular_melhor_rota_entrega(
             "prioridade": (
                 "1 representa a maior prioridade; numeros maiores possuem "
                 "menor prioridade."
+            ),
+        },
+        "comparativo_referencia": {
+            "descricao": (
+                "Comparacao com a ordem de paradas originalmente informada "
+                "pelo operador, respeitando as mesmas restricoes."
+            ),
+            "distancia_referencia_m": avaliacao_referencia.distancia_total_m,
+            "distancia_referencia_km": (
+                avaliacao_referencia.distancia_total_m / 1000
+            ),
+            "economia_distancia_m": economia_referencia_m,
+            "economia_distancia_km": economia_referencia_m / 1000,
+            "economia_percentual": (
+                (economia_referencia_m / avaliacao_referencia.distancia_total_m * 100)
+                if avaliacao_referencia.distancia_total_m
+                else 0.0
             ),
         },
         "algoritmo": {

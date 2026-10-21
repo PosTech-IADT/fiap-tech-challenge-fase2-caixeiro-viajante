@@ -2,6 +2,31 @@
 
 Projeto para calcular a melhor rota de entrega saindo sempre da sede e visitando as unidades selecionadas.
 
+## Evolucao do codigo-base da FIAP
+
+Este projeto foi desenvolvido a partir dos conceitos e operadores apresentados
+no codigo-base
+[`FIAP/genetic_algorithm_tsp`](https://github.com/FIAP/genetic_algorithm_tsp).
+O exemplo original resolve o TSP sobre pontos cartesianos e usa distancia em
+linha reta. Nesta evolucao, a mesma estrutura genetica foi adaptada para o
+contexto hospitalar e para trajetos sobre ruas reais do OpenStreetMap.
+
+Os nomes centrais foram mantidos para tornar essa evolucao rastreavel:
+
+| Codigo-base | Implementacao deste projeto | Evolucao realizada |
+| --- | --- | --- |
+| `genetic_algorithm.py` | `route_engine/genetic_algorithm.py` | Nucleo genetico modular e testavel |
+| `generate_random_population` | `generate_random_population` | Inclui um individuo inicial heuristico |
+| `calculate_fitness` | `calculate_fitness` | Considera ruas, prioridade, carga e autonomia |
+| `order_crossover` | `order_crossover` | Combina dois pais e preserva rotas validas |
+| `mutate` | `mutate` | Aplica mutacao por troca ou inversao |
+| `sort_population` | `sort_population` | Ordena individuos pelo fitness ampliado |
+
+O Pygame do exemplo foi substituido por mapas Folium. O calculo euclidiano em
+pixels foi substituido por uma matriz de menores caminhos calculada com OSMnx e
+NetworkX. A API de negocio continua em portugues para representar o dominio de
+entregas hospitalares.
+
 ## Como usar
 
 1. Ative o ambiente virtual:
@@ -64,6 +89,8 @@ criar_mapa_rota(resultado)
 - `route_engine/`: motor de rotas usado pelo `main.py` e pelos futuros serviços.
 - `route_engine/data.py`: cadastro da sede e das unidades.
 - `route_engine/engine.py`: cálculo da melhor rota pelas ruas.
+- `route_engine/genetic_algorithm.py`: evolucao do algoritmo genetico fornecido
+  pela FIAP, com operadores especializados e restricoes hospitalares.
 - `route_engine/maps.py`: geração do mapa de unidades e do mapa animado em HTML.
 - `main.ipynb`: notebook usado para exploracao, testes e visualizacao.
 - `requirements.txt`: dependencias Python do projeto.
@@ -74,7 +101,8 @@ criar_mapa_rota(resultado)
 O servidor MCP fica em `mcp_server/` e usa o transporte SSE.
 Ele expoe as ferramentas `ping`, `listar_pontos_entrega`,
 `consultar_ponto_entrega`, `gerar_mapa_pontos` e
-`calcular_rota_entrega` no endpoint
+`calcular_rota_entrega` (descontinuada), `otimizar_rota_genetica` e
+`gerar_relatorio_operacional` no endpoint
 `http://localhost:8000/sse`.
 
 A ferramenta `gerar_mapa_pontos` cria o mapa interativo em
@@ -82,7 +110,16 @@ A ferramenta `gerar_mapa_pontos` cria o mapa interativo em
 
 A ferramenta `calcular_rota_entrega` recebe os nomes dos pontos e a confirmacao
 de saida da sede. Ela retorna a melhor ordem das paradas, a distancia total e
-cria o mapa em `mcp_server/output/mapa_rota.html`.
+cria o mapa em `mcp_server/output/mapa_rota.html`. Essa ferramenta esta
+descontinuada, permanece disponivel apenas para clientes antigos e nao e
+exposta ao Route Assistant. Novas integracoes devem usar
+`otimizar_rota_genetica`.
+
+A ferramenta `otimizar_rota_genetica` tambem recebe capacidade e autonomia do
+veiculo, alem de demandas e prioridades por unidade. Prioridade 1 representa
+criticidade alta, 2 media e 3 normal. Parametros tecnicos do algoritmo podem
+ser enviados em `configuracao_ga`, mas devem permanecer nos valores padrao
+quando o usuario nao solicitar sua alteracao.
 
 No MCP Inspector, selecione o transporte `SSE` e use a URL acima.
 
@@ -101,7 +138,7 @@ docker compose ps
 Execute o cliente de teste dentro do container:
 
 ```bash
-docker compose exec mcp-server python test_client.py
+docker compose exec mcp-server python mcp_server/test_client.py
 ```
 
 Para acompanhar os logs ou encerrar o servidor:
@@ -114,7 +151,15 @@ docker compose down
 ## Frontend do agente
 
 O frontend Streamlit fica em `route_agent/` e roda em um container separado.
-Ele utiliza o OpenAI Agents SDK e se conecta ao MCP Server por SSE.
+Ele utiliza o OpenAI Agents SDK com o modelo `gpt-5.4-mini`, raciocinio
+configurado como `low` e respostas de baixa verbosidade. O agente se conecta
+ao MCP Server por SSE.
+
+Chamadas demoradas ao MCP usam um timeout configuravel pela variavel
+`MCP_CLIENT_TIMEOUT_SECONDS`. O valor padrao no Docker Compose e de 300
+segundos. Esse limite pertence ao Route Assistant; clientes externos, como o
+MCP Inspector, possuem seu proprio timeout e devem ser configurados
+separadamente.
 
 Crie o arquivo `.env` na raiz do projeto:
 
@@ -127,3 +172,21 @@ ficara disponivel em `http://localhost:8501`.
 
 Quando a tool `gerar_mapa_pontos` for chamada, o mapa salvo pelo MCP Server e
 renderizado diretamente na interface do agente.
+
+### Instrucoes e relatorios com LLM
+
+O agente usa a LLM para transformar dados retornados pelas tools em instrucoes
+de entrega e relatorios operacionais, sem criar metricas que nao existam no
+motor de rotas. Exemplos de pedidos no chat:
+
+- "Gere instrucoes para o motorista para a rota saindo da sede ate HCor e IGESP";
+- "Otimize a rota saindo da sede para HCor e IGESP com capacidade de 50 kg,
+  autonomia de 30 km e informe peso e criticidade de cada parada";
+- "Gere o relatorio diario de eficiencia das rotas";
+- "Quais melhorias voce sugere com base no relatorio semanal?".
+
+Cada calculo bem-sucedido e registrado em
+`mcp_server/output/historico_rotas.json` (arquivo local ignorado pelo Git). Os
+relatorios agregam quantidade de rotas, paradas, viagens, distancia e a economia
+de distancia frente a ordem originalmente informada. Tempo real, combustivel e
+custos nao sao estimados porque o projeto nao coleta esses dados.
