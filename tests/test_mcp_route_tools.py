@@ -57,6 +57,8 @@ def _resultado_rota():
         "demanda_kg": 20.0,
         "viagem": 1,
         "ordem_na_viagem": 1,
+        "situacao": "desativado",
+        "observacao": "Informacao interna",
     }
     return {
         "sede": {
@@ -142,6 +144,8 @@ def test_calcular_rota_retorna_dados_para_instrucoes_e_registra_historico(
     assert resposta["rota"][0]["prioridade"] == 1
     assert resposta["rota"][0]["prioridade_rotulo"] == "alta"
     assert resposta["rota"][0]["demanda_kg"] == 20.0
+    assert "situacao" not in resposta["rota"][0]
+    assert "observacao" not in resposta["rota"][0]
     assert resposta["total_viagens"] == 1
     assert resposta["algoritmo"]["nome"] == "algoritmo_genetico"
     assert resposta["aviso_descontinuacao"]["substituta"] == (

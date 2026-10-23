@@ -76,12 +76,6 @@ def serializar_ponto(ponto: dict, categoria: str) -> dict[str, object]:
         resultado["plus_code"] = ponto["plus_code"]
         resultado["plus_code_completo"] = ponto["plus_code_completo"]
 
-    if ponto.get("situacao"):
-        resultado["situacao"] = ponto["situacao"]
-
-    if ponto.get("observacao"):
-        resultado["observacao"] = ponto["observacao"]
-
     return resultado
 
 

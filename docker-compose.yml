@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: mcp_server/Dockerfile
-    container_name: fiap-route-mcp
+    container_name: route-mcp
     environment:
       MCP_HOST: 0.0.0.0
       MCP_PORT: 8000
@@ -32,7 +32,7 @@ services:
   route-agent:
     build:
       context: ./route_agent
-    container_name: fiap-route-agent
+    container_name: route-agent
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       MCP_SERVER_URL: http://mcp-server:8000/sse

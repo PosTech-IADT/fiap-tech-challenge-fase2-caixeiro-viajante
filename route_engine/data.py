@@ -104,12 +104,6 @@ UNIDADES = [
             "uf": "SP",
             "cep": "01418-100",
         },
-        "situacao": "desativado",
-        "observacao": (
-            "A antiga unidade TotalCor foi desativada e incorporada ao "
-            "Hospital Samaritano Paulista. O endereço foi mantido porque "
-            "corresponde ao ponto histórico cadastrado na aplicação."
-        ),
     },
     {
         "nome": "Hospital Samaritano Paulista",

@@ -30,8 +30,6 @@ class AgentsFactory:
 
                   Nao coloque todo o cadastro na mesma linha e nao repita o tipo da
                   unidade quando essa informacao nao for relevante para a pergunta.
-                - Se a unidade tiver situacao ou observacao, explique essa informacao
-                  em linguagem simples, especialmente quando estiver desativada.
                 - Para uma visao geral, use listar_pontos_entrega.
                 - Para detalhes de uma unidade, use consultar_ponto_entrega.
                 - Quando o usuario pedir um mapa, use gerar_mapa_pontos e informe que
