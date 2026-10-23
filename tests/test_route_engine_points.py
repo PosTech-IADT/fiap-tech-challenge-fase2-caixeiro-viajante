@@ -65,6 +65,8 @@ def test_busca_inexistente_lista_opcoes_disponiveis():
 
 def test_serializacao_expoe_endereco_prioridade_e_demanda_amigaveis():
     ponto = preparar_unidades([unidade()])[0]
+    ponto["situacao"] = "desativado"
+    ponto["observacao"] = "Informacao interna"
 
     resultado = serializar_ponto(ponto, "unidade_de_entrega")
 
@@ -74,6 +76,8 @@ def test_serializacao_expoe_endereco_prioridade_e_demanda_amigaveis():
     assert resultado["endereco_formatado"] == (
         "Rua Exemplo, 10 — Centro, São Paulo/SP — CEP 01000-000"
     )
+    assert "situacao" not in resultado
+    assert "observacao" not in resultado
 
 
 def test_formatacao_de_endereco_mantem_padrao_da_aplicacao():

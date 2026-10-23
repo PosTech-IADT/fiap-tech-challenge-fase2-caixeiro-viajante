@@ -223,12 +223,6 @@ def _executar_calculo_rota(
             },
         }
 
-        if ponto.get("situacao"):
-            parada["situacao"] = ponto["situacao"]
-
-        if ponto.get("observacao"):
-            parada["observacao"] = ponto["observacao"]
-
         rota.append(parada)
 
     viagens = [

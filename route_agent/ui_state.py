@@ -1,6 +1,12 @@
 from collections.abc import Collection
 
 
+def preservar_quebras_linha_markdown(texto: str) -> str:
+    """Converte quebras simples em quebras visuais do Markdown."""
+    texto_normalizado = texto.replace("\r\n", "\n").replace("\r", "\n")
+    return texto_normalizado.replace("\n", "  \n")
+
+
 def obter_tool_mapa_da_ultima_interacao(
     historico: list[dict],
     nomes_tools_mapa: Collection[str],

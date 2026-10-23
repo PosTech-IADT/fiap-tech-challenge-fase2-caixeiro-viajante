@@ -47,17 +47,13 @@ def exibir_mapa_unidades():
 
     for unidade in unidades:
         cor = "blue" if "UBS" in unidade["tipo"] else "red"
-        situacao = ""
-
-        if unidade.get("situacao"):
-            situacao = f"<br>Situação: {unidade['situacao']}"
 
         popup_html = f"""
         <b>{unidade['nome']}</b><br>
         Tipo: {unidade['tipo']}<br>
         Endereço: {formatar_endereco(unidade['endereco'])}<br>
         Prioridade: {unidade['prioridade']}<br>
-        Carga: {unidade['demanda_kg']:.1f} kg{situacao}
+        Carga: {unidade['demanda_kg']:.1f} kg
         """
 
         folium.Marker(
@@ -88,11 +84,7 @@ def criar_mapa_rota(resultado):
     ).add_to(mapa_entrega)
 
     for ordem, unidade in enumerate(resultado["rota"], start=1):
-        situacao = ""
         estilo = _estilo_viagem(unidade["viagem"])
-
-        if unidade.get("situacao"):
-            situacao = f"<br>Situação: {unidade['situacao']}"
 
         folium.Marker(
             location=unidade["coords"],
@@ -106,7 +98,7 @@ def criar_mapa_rota(resultado):
                 f"Tipo: {unidade['tipo']}<br>"
                 f"Prioridade: {unidade['prioridade_rotulo']}<br>"
                 f"Carga: {unidade['demanda_kg']:.1f} kg<br>"
-                f"{formatar_endereco(unidade['endereco'])}{situacao}",
+                f"{formatar_endereco(unidade['endereco'])}",
                 max_width=350,
             ),
             icon=folium.Icon(color=estilo["marcador"], icon="flag"),

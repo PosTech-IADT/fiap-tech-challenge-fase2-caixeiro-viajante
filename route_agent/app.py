@@ -10,7 +10,10 @@ import streamlit.components.v1 as components
 
 from agent_factory import AgentsFactory
 from mcp_manager import MCPManager
-from ui_state import obter_tool_mapa_da_ultima_interacao
+from ui_state import (
+    obter_tool_mapa_da_ultima_interacao,
+    preservar_quebras_linha_markdown,
+)
 
 
 load_dotenv()
@@ -74,7 +77,11 @@ def renderizar_historico() -> None:
 
         if tipo == "user":
             with st.chat_message("user"):
-                st.markdown(mensagem.get("content", ""))
+                st.markdown(
+                    preservar_quebras_linha_markdown(
+                        mensagem.get("content", "")
+                    )
+                )
 
         elif tipo == "assistant":
             texto = extrair_texto_assistente(mensagem.get("content"))
@@ -214,7 +221,7 @@ if prompt:
     )
 
     with st.chat_message("user"):
-        st.markdown(prompt)
+        st.markdown(preservar_quebras_linha_markdown(prompt))
 
     with st.status("Analisando sua solicitação...", expanded=False) as status:
         try:
