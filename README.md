@@ -134,41 +134,6 @@ Depois de alterar o código ou as dependências, reconstrua as imagens:
 docker compose up --build -d
 ```
 
-## Execução local do motor de rotas (opcional)
-
-Este modo executa apenas o script Python do motor de rotas, sem iniciar a
-interface Streamlit nem o servidor MCP.
-
-1. Ative o ambiente virtual:
-
-```bash
-source .venv/bin/activate
-```
-
-2. Instale/atualize as dependências:
-
-```bash
-pip install -r requirements.txt
-```
-
-3. Edite a lista `LOCAIS_ENTREGA` no arquivo `main.py`:
-
-```python
-LOCAIS_ENTREGA = [
-    "Hospital IGESP Paulista",
-    "HCor - Hospital do Coração",
-    "Hospital Luz Vila Mariana",
-]
-```
-
-4. Execute:
-
-```bash
-python main.py
-```
-
-O script imprime a melhor ordem de visita no terminal e gera o arquivo `rota_entrega.html` com o mapa animado da rota.
-
 ## Uso pelo notebook
 
 Para mostrar o mapa com todos os pontos cadastrados:
@@ -195,8 +160,7 @@ criar_mapa_rota(resultado)
 
 ## Arquivos principais
 
-- `main.py`: ponto de entrada para calcular uma entrega.
-- `route_engine/`: motor de rotas usado pelo `main.py` e pelos futuros serviços.
+- `route_engine/`: motor de cálculo e visualização de rotas.
 - `route_engine/data.py`: cadastro da sede e das unidades.
 - `route_engine/engine.py`: cálculo da melhor rota pelas ruas.
 - `route_engine/genetic_algorithm.py`: evolução do algoritmo genético fornecido
