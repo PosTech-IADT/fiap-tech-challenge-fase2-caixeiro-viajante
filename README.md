@@ -136,6 +136,15 @@ docker compose up --build -d
 
 ## Uso pelo notebook
 
+O notebook main.ipynb foi organizado como roteiro de apresentação: contexto do
+problema, pontos cadastrados, rota padrão e cenário com restrições de
+capacidade, autonomia, demanda e prioridade. Execute as células na ordem em
+que aparecem. A primeira rota pode demorar mais porque a malha viária é obtida
+do OpenStreetMap; as próximas usam o cache local.
+
+As chamadas públicas da biblioteca Python estão documentadas em
+route_engine/README.md.
+
 Para mostrar o mapa com todos os pontos cadastrados:
 
 ```python
